@@ -5,14 +5,24 @@ jobs:
   build-and-test:
     docker:
       - image: cimg/python:3.11.0
+    parallelism: 4
     steps:
       - checkout
       - python/install-packages:
           pkg-manager: pip
       - run:
           name: Run tests
-          command: pytest
+          command: |
+            mkdir test-results
+            pytest --collect-only -q | grep -e "\.py" | circleci tests run
+            --command="xargs pytest --junitxml=test-results/junit.xml -v --"
+            --fail-fast --batch-count=4 --verbose --test-results-path="test-results"
+            --split-by=name
+          - store_test_results:
+              path: test-results
 workflows:
   sample:
     jobs:
       - build-and-test
+
+# VS Code Extension Version: 1.4.0
